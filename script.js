@@ -2,11 +2,8 @@
 
 window.addEventListener("DOMContentLoaded", start);
 
-const settings = {
-  urlFetch: "",
-  corssKey: "",
-  btnSubmit: undefined,
-};
+import { endpoint, headers } from "./settings.js";
+import { get, post } from "./crud.js";
 
 const fantasyCreature = {
   name: "",
@@ -20,71 +17,22 @@ const btnSubmit = document.querySelector("#btn-submit");
 const btnEdit = document.querySelector("#btn-edit");
 
 function start() {
-  settings.urlFetch = "https://reicpe-9cc2.restdb.io/rest/fantasy-creature";
-  settings.corssKey = "606d5dcef5535004310074f4";
-  btnSubmit.addEventListener("click", post);
-  get();
+  btnSubmit.addEventListener("click", () => {
+    fillObject();
+    post(displayInfo, fantasyCreature);
+  });
+  get(displayInfo);
 }
 
-function get() {
-  fetch(settings.urlFetch + '?q={}&h={"$orderby": {"_created": -1}}', {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "x-apikey": settings.corssKey,
-      "cache-control": "no-cache",
-    },
-  })
-    .then((res) => res.json())
-    .then((response) => {
-      // console.log(response);
-
-      displayInfo(response);
-    })
-    .catch((err) => {
-      console.error(err);
-    });
-}
-
-function post() {
-  fillObject();
-
-  const postData = JSON.stringify(fantasyCreature);
-  fetch(settings.urlFetch, {
-    method: "post",
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "x-apikey": settings.corssKey,
-      "cache-control": "no-cache",
-    },
-    body: postData,
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      console.log(data);
-      if (data.status) {
-        console.log(data.status);
-        alert("that name all ready exist");
-      } else {
-        get();
-        cleanForm();
-      }
-    });
-}
-
-function deleteIt(ID) {
-  fetch(settings.urlFetch + "/" + ID, {
+function deleteIt(ID, evt) {
+  fetch(endpoint + "/" + ID, {
     method: "delete",
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "x-apikey": settings.corssKey,
-      "cache-control": "no-cache",
-    },
+    headers,
   })
     .then((res) => res.json())
     .then((data) => {
       console.log(data);
-      get();
+      evt.target.parentElement.parentElement.remove();
     });
 }
 
@@ -94,13 +42,9 @@ function editIt(ID) {
   btnEdit.addEventListener("click", () => {
     put(ID);
   });
-  fetch(settings.urlFetch + "/" + ID, {
+  fetch(endpoint + "/" + ID, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "x-apikey": settings.corssKey,
-      "cache-control": "no-cache",
-    },
+    headers,
   })
     .then((res) => res.json())
     .then((response) => {
@@ -117,13 +61,9 @@ function put(ID) {
   fillObject();
   let postData = JSON.stringify(fantasyCreature);
 
-  fetch(settings.urlFetch + "/" + ID, {
+  fetch(endpoint + "/" + ID, {
     method: "put",
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "x-apikey": settings.corssKey,
-      "cache-control": "no-cache",
-    },
+    headers,
     body: postData,
   })
     .then((d) => d.json())
@@ -134,26 +74,26 @@ function put(ID) {
     });
 }
 
-function displayInfo(creatures) {
-  const parent = document.querySelector(".container");
-  parent.innerHTML = "";
+function displayInfo(creature) {
   //grab the template
   const template = document.querySelector("#mytemplate").content;
-  creatures.forEach((creature) => {
-    //clone
-    const copy = template.cloneNode(true);
-    //adjust stuff
-    copy.querySelector(".name").textContent = creature.name;
-    copy.querySelector(".color").textContent = creature.color;
-    copy.querySelector(".age").textContent = creature.age;
-    copy.querySelector(".mythology").textContent = creature.mythology;
-    if (creature.horns) {
-      copy.querySelector(".creature-container").style.background = "blue";
-    }
-    copy.querySelector(".btn-delete").addEventListener("click", () => deleteIt(creature._id));
-    copy.querySelector(".btn-edit").addEventListener("click", () => editIt(creature._id));
-    parent.appendChild(copy);
-  });
+
+  //clone
+  const copy = template.cloneNode(true);
+  //adjust stuff
+  copy.querySelector(".name").textContent = creature.name;
+  copy.querySelector(".color").textContent = creature.color;
+  copy.querySelector(".age").textContent = creature.age;
+  copy.querySelector(".mythology").textContent = creature.mythology;
+  if (creature.horns) {
+    copy.querySelector(".creature-container").style.background = "blue";
+  }
+  copy.querySelector(".btn-delete").addEventListener("click", (e) => deleteIt(creature._id, e));
+  copy.querySelector(".btn-edit").addEventListener("click", () => editIt(creature._id));
+  const parent = document.querySelector(".container");
+
+  parent.insertBefore(copy, parent.childNodes[0]);
+  // parent.appendChild(copy);
 }
 
 function fillObject() {
@@ -164,7 +104,7 @@ function fillObject() {
   fantasyCreature.horns = document.querySelector('input[name="horns"]:checked').value;
 }
 
-function cleanForm() {
+export function cleanForm() {
   btnEdit.classList.add("hidden");
   btnSubmit.classList.remove("hidden");
   document.querySelector("h2.action").textContent = "New fantasy creature";
