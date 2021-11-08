@@ -1,0 +1,19 @@
+{
+  "name": "firstexcersize",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "dependencies": {},
+  "devDependencies": {
+    "minify": "^8.0.3"
+  },
+  "scripts": {
+    "dev": "live-server",
+    "minify-js": "minify script.js > dist/script.min.js",
+    "minify-html": "minify index.html > dist/index.min.html",
+    "minify-css": "minify style.css > dist/style.min.css"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
